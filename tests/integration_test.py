@@ -41,7 +41,7 @@ async def test_budgets_resource():
             print(f"\nBudgets result:\n{budgets_text}\n")
 
             # Validate the response
-            assert "budgets" in budgets_text.lower() or "budget" in budgets_text.lower()
+            assert budgets_text and ("Name | ID" in budgets_text or "No budgets found" in budgets_text)
             print("✅ Integration test passed!")
 
 
