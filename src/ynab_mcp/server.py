@@ -51,21 +51,23 @@ def format_budgets(budgets: list[dict]) -> str:
     if not budgets:
         return "No budgets found."
 
-    output = ["YNAB Budgets\n" + "=" * 50 + "\n"]
+    output = ["Name | ID | Modified | Currency"]
 
     for budget in budgets:
-        output.append(f"Name: {budget['name']}")
-        output.append(f"ID: {budget['id']}")
-
-        if last_modified := budget.get("last_modified_on"):
-            output.append(f"Last Modified: {last_modified}")
+        parts = [
+            budget["name"],
+            budget["id"],
+            budget.get("last_modified_on", ""),
+        ]
 
         if currency := budget.get("currency_format"):
             symbol = currency.get("currency_symbol", "")
             code = currency.get("iso_code", "")
-            output.append(f"Currency: {symbol} ({code})")
+            parts.append(f"{symbol}{code}")
+        else:
+            parts.append("")
 
-        output.append("-" * 50)
+        output.append(" | ".join(parts))
 
     return "\n".join(output)
 
