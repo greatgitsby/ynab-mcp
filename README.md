@@ -55,9 +55,19 @@ After installation, Claude Code will be able to access your YNAB budgets through
 
 ## Testing
 
-### Integration Test
+### Quick Test
 
-Run the integration test to verify the server works correctly:
+Run the comprehensive test script:
+
+```bash
+./test.sh
+```
+
+This script will automatically load your `.env` file and run all tests.
+
+### Integration Test (Manual)
+
+Or run the integration test directly:
 
 ```bash
 export YNAB_API_TOKEN="your_token"
@@ -103,6 +113,7 @@ ynab-mcp/
 │       └── client.py       # YNAB API client
 ├── tests/
 │   └── integration_test.py # Integration test
+├── test.sh                 # Test runner script
 ├── pyproject.toml          # Project configuration
 ├── README.md              # This file
 ├── .gitignore             # Git ignore patterns
