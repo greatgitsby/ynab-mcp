@@ -34,6 +34,24 @@ class YNABClient:
         data = response.json()
         return data["data"]["budgets"]
 
+    async def get_accounts(self, budget_id: str) -> list[dict]:
+        """Retrieve all accounts for a specific budget.
+
+        Args:
+            budget_id: The ID of the budget to get accounts from
+
+        Returns:
+            List of account dictionaries containing account information
+
+        Raises:
+            httpx.HTTPStatusError: If the API returns an error status code
+            httpx.RequestError: If there's a network or connection error
+        """
+        response = await self.client.get(f"{self.base_url}/budgets/{budget_id}/accounts")
+        response.raise_for_status()
+        data = response.json()
+        return data["data"]["accounts"]
+
     async def close(self):
         """Close the HTTP client and cleanup resources."""
         await self.client.aclose()

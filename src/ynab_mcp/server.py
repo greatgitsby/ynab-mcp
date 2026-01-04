@@ -72,6 +72,37 @@ def format_budgets(budgets: list[dict]) -> str:
     return "\n".join(output)
 
 
+def format_accounts(accounts: list[dict]) -> str:
+    """Format account list as readable text.
+
+    Args:
+        accounts: List of account dictionaries from YNAB API
+
+    Returns:
+        Formatted string representation of accounts
+    """
+    if not accounts:
+        return "No accounts found."
+
+    output = ["Name | Type | Balance | On Budget | Closed"]
+
+    for account in accounts:
+        # Convert milliunits to currency (YNAB stores as milliunits: 1000 milliunits = $1.00)
+        balance = account.get("balance", 0) / 1000.0
+
+        parts = [
+            account.get("name", "Unknown"),
+            account.get("type", "Unknown"),
+            f"${balance:,.2f}",
+            "Yes" if account.get("on_budget", False) else "No",
+            "Yes" if account.get("closed", False) else "No"
+        ]
+
+        output.append(" | ".join(parts))
+
+    return "\n".join(output)
+
+
 @mcp.resource("ynab://budgets")
 async def get_budgets() -> str:
     """List all YNAB budgets for the user.
@@ -92,6 +123,38 @@ async def get_budgets() -> str:
         status_code = e.response.status_code
         if status_code == 401:
             return "Error: Invalid YNAB API token. Please check your YNAB_API_TOKEN environment variable."
+        elif status_code == 429:
+            return "Error: YNAB API rate limit exceeded. Please try again later."
+        else:
+            return f"Error: YNAB API returned status code {status_code}"
+    except httpx.RequestError as e:
+        return f"Error: Failed to connect to YNAB API - {str(e)}"
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+
+@mcp.resource("ynab://budgets/{budget_id}/accounts")
+async def get_accounts(budget_id: str) -> str:
+    """List all accounts for a specific YNAB budget.
+
+    Args:
+        budget_id: The ID of the budget to get accounts from
+
+    Returns:
+        Formatted string containing account information
+    """
+    if ynab_client is None:
+        return "Error: YNAB API client not initialized"
+
+    try:
+        accounts = await ynab_client.get_accounts(budget_id)
+        return format_accounts(accounts)
+    except httpx.HTTPStatusError as e:
+        status_code = e.response.status_code
+        if status_code == 401:
+            return "Error: Invalid YNAB API token. Please check your YNAB_API_TOKEN environment variable."
+        elif status_code == 404:
+            return f"Error: Budget '{budget_id}' not found. Please check the budget ID."
         elif status_code == 429:
             return "Error: YNAB API rate limit exceeded. Please try again later."
         else:
