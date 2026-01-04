@@ -4,7 +4,7 @@
       "command": "bash",
       "args": [
         "-c",
-        "[ -f .env ] && set -a && source .env && set +a; uv run python -m ynab_mcp.server"
+        "[ -f .env ] && set -a && source .env && set +a; uv run src/ynab_mcp/server.py"
       ]
     }
   }
