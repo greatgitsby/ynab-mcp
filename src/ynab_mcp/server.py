@@ -1,5 +1,6 @@
 """YNAB MCP server implementation."""
 
+import logging
 import os
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
@@ -7,6 +8,10 @@ from typing import AsyncIterator
 import httpx
 from mcp.server.fastmcp import FastMCP
 from ynab_mcp.client import YNABClient
+
+# Suppress noisy logs
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("mcp").setLevel(logging.WARNING)
 
 # Global client instance
 ynab_client: YNABClient | None = None
