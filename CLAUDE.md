@@ -17,6 +17,7 @@ This is a Model Context Protocol (MCP) server that exposes YNAB (You Need A Budg
    - Error handling returns error messages as strings (not exceptions) for LLM consumption
 
 2. **API Client Layer** (`src/ynab_mcp/client.py`)
+   - YNAB's API spec lives here: https://api.ynab.com/papi/open_api_spec.yaml
    - `YNABClient` class wraps YNAB API calls using async httpx
    - Initialized with Bearer token authentication
    - Returns parsed JSON data structures (not formatted text)
