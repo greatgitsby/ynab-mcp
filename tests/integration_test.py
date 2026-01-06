@@ -75,6 +75,79 @@ async def test_accounts_resource():
             assert "Error" in error_text or "not found" in error_text.lower()
 
 
+async def test_transactions_tool():
+    """Test the get_transactions tool."""
+    if not os.environ.get("YNAB_API_TOKEN"):
+        raise ValueError(
+            "YNAB_API_TOKEN must be set. "
+            "Get your token from: https://app.ynab.com/settings/developer"
+        )
+
+    server_params = StdioServerParameters(
+        command="uv",
+        args=["run", "python", "-m", "ynab_mcp.server"],
+        env=os.environ.copy(),
+    )
+
+    async with stdio_client(server_params) as (read, write):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+
+            # Get a valid budget_id
+            budgets_result = await session.read_resource("ynab://budgets")
+            budgets_text = budgets_result.contents[0].text
+
+            # Extract first budget ID from the response
+            lines = budgets_text.strip().split("\n")
+            if len(lines) < 2:
+                print("⏭️  No budgets, skipping")
+                return
+
+            budget_id = lines[1].split(" | ")[1]
+
+            # Test 1: Get all transactions
+            result = await session.call_tool(
+                "get_transactions",
+                arguments={"budget_id": budget_id}
+            )
+            transactions_text = result.content[0].text
+            assert transactions_text and (
+                "Date | Payee | Category" in transactions_text or
+                "No transactions found" in transactions_text
+            )
+
+            # Test 2: Get uncategorized transactions
+            uncategorized_result = await session.call_tool(
+                "get_transactions",
+                arguments={
+                    "budget_id": budget_id,
+                    "transaction_type": "uncategorized"
+                }
+            )
+            uncategorized_text = uncategorized_result.content[0].text
+            assert uncategorized_text
+
+            # Test 3: Invalid transaction_type
+            invalid_result = await session.call_tool(
+                "get_transactions",
+                arguments={
+                    "budget_id": budget_id,
+                    "transaction_type": "invalid_type"
+                }
+            )
+            invalid_text = invalid_result.content[0].text
+            assert "Error" in invalid_text
+
+            # Test 4: Invalid budget_id
+            error_result = await session.call_tool(
+                "get_transactions",
+                arguments={"budget_id": "invalid-budget-12345"}
+            )
+            error_text = error_result.content[0].text
+            assert "Error" in error_text or "not found" in error_text.lower()
+
+
 if __name__ == "__main__":
     asyncio.run(test_budgets_resource())
     asyncio.run(test_accounts_resource())
+    asyncio.run(test_transactions_tool())
