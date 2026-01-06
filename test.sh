@@ -15,9 +15,10 @@ if [ -z "${YNAB_API_TOKEN:-}" ]; then
     exit 1
 fi
 
-# Run integration test
-echo "Running integration test..."
-if uv run python tests/integration_test.py; then
+# Run pytest with parallel execution
+# Each test manages its own server subprocess, so parallel execution is safe
+echo "Running integration tests..."
+if uv run pytest tests/ -n auto --tb=short -v; then
     echo "✓ All tests passed"
     exit 0
 else
