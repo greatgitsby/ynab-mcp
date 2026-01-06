@@ -1,5 +1,7 @@
 """YNAB API client for making authenticated requests."""
 
+from typing import Literal
+
 import httpx
 
 
@@ -51,6 +53,36 @@ class YNABClient:
         response.raise_for_status()
         data = response.json()
         return data["data"]["accounts"]
+
+    async def get_transactions(
+        self,
+        budget_id: str,
+        transaction_type: Literal["uncategorized", "unapproved"] | None = None
+    ) -> list[dict]:
+        """Retrieve transactions for a specific budget.
+
+        Args:
+            budget_id: The ID of the budget (supports "last-used" or "default")
+            transaction_type: Optional filter - "uncategorized" or "unapproved"
+
+        Returns:
+            List of transaction dictionaries containing transaction details
+
+        Raises:
+            httpx.HTTPStatusError: If the API returns an error status code
+            httpx.RequestError: If there's a network or connection error
+        """
+        url = f"{self.base_url}/budgets/{budget_id}/transactions"
+
+        # Build query parameters
+        params = {}
+        if transaction_type is not None:
+            params["type"] = transaction_type
+
+        response = await self.client.get(url, params=params)
+        response.raise_for_status()
+        data = response.json()
+        return data["data"]["transactions"]
 
     async def close(self):
         """Close the HTTP client and cleanup resources."""
