@@ -84,6 +84,34 @@ class YNABClient:
         data = response.json()
         return data["data"]["transactions"]
 
+    async def get_categories(self, budget_id: str) -> list[dict]:
+        """Retrieve all categories for a specific budget.
+
+        Categories are returned flattened from their category groups, with
+        the group name attached to each category.
+
+        Args:
+            budget_id: The ID of the budget to get categories from
+
+        Returns:
+            List of category dictionaries with category_group_name added
+
+        Raises:
+            httpx.HTTPStatusError: If the API returns an error status code
+            httpx.RequestError: If there's a network or connection error
+        """
+        response = await self.client.get(f"{self.base_url}/budgets/{budget_id}/categories")
+        response.raise_for_status()
+        data = response.json()
+
+        # Flatten category groups into a flat list with group name on each category
+        categories = []
+        for group in data["data"]["category_groups"]:
+            for category in group.get("categories", []):
+                category["category_group_name"] = group["name"]
+                categories.append(category)
+        return categories
+
     async def close(self):
         """Close the HTTP client and cleanup resources."""
         await self.client.aclose()

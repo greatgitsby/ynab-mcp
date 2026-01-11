@@ -144,6 +144,43 @@ def format_transactions(transactions: list[dict]) -> str:
     return "\n".join(output)
 
 
+def format_categories(categories: list[dict]) -> str:
+    """Format category list as readable text.
+
+    Args:
+        categories: List of category dictionaries from YNAB API
+
+    Returns:
+        Formatted string representation of categories
+    """
+    if not categories:
+        return "No categories found."
+
+    output = ["Category Group | Category | Assigned | Activity | Available"]
+
+    for cat in categories:
+        # Convert milliunits to currency (YNAB: 1000 milliunits = $1.00)
+        budgeted = cat.get("budgeted", 0) / 1000.0
+        activity = cat.get("activity", 0) / 1000.0
+        balance = cat.get("balance", 0) / 1000.0
+
+        # Format amounts with explicit sign for clarity
+        def fmt_amount(amt: float) -> str:
+            return f"${amt:,.2f}" if amt >= 0 else f"-${abs(amt):,.2f}"
+
+        parts = [
+            cat.get("category_group_name", "Unknown"),
+            cat.get("name", "Unknown"),
+            fmt_amount(budgeted),
+            fmt_amount(activity),
+            fmt_amount(balance),
+        ]
+
+        output.append(" | ".join(parts))
+
+    return "\n".join(output)
+
+
 @mcp.resource("ynab://budgets")
 async def get_budgets() -> str:
     """List all YNAB budgets for the user.
@@ -190,6 +227,38 @@ async def get_accounts(budget_id: str) -> str:
     try:
         accounts = await ynab_client.get_accounts(budget_id)
         return format_accounts(accounts)
+    except httpx.HTTPStatusError as e:
+        status_code = e.response.status_code
+        if status_code == 401:
+            return "Error: Invalid YNAB API token. Please check your YNAB_API_TOKEN environment variable."
+        elif status_code == 404:
+            return f"Error: Budget '{budget_id}' not found. Please check the budget ID."
+        elif status_code == 429:
+            return "Error: YNAB API rate limit exceeded. Please try again later."
+        else:
+            return f"Error: YNAB API returned status code {status_code}"
+    except httpx.RequestError as e:
+        return f"Error: Failed to connect to YNAB API - {str(e)}"
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+
+@mcp.resource("ynab://budgets/{budget_id}/categories")
+async def get_categories(budget_id: str) -> str:
+    """List all categories for a specific YNAB budget.
+
+    Args:
+        budget_id: The ID of the budget to get categories from
+
+    Returns:
+        Formatted string containing category information
+    """
+    if ynab_client is None:
+        return "Error: YNAB API client not initialized"
+
+    try:
+        categories = await ynab_client.get_categories(budget_id)
+        return format_categories(categories)
     except httpx.HTTPStatusError as e:
         status_code = e.response.status_code
         if status_code == 401:
