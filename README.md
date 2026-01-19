@@ -47,11 +47,31 @@ uv run mcp dev src/ynab_mcp/server.py
 
 ### Installing to Claude Code
 
-```bash
-uv run mcp install src/ynab_mcp/server.py --name "YNAB"
+Add the following to your Claude Code MCP settings (`~/.claude.json`):
+
+```json
+{
+  "mcpServers": {
+    "ynab": {
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/greatgitsby/ynab-mcp", "ynab-mcp"],
+      "env": {
+        "YNAB_API_TOKEN": "your_token_here"
+      }
+    }
+  }
+}
 ```
 
 After installation, Claude Code will be able to access your YNAB budgets through the `ynab://budgets` resource.
+
+### Local Development Installation
+
+If you have the repo cloned locally:
+
+```bash
+uv run mcp install src/ynab_mcp/server.py --name "YNAB"
+```
 
 ## Testing
 
@@ -80,15 +100,6 @@ This will:
 3. List available resources
 4. Read the budgets resource
 5. Validate the response
-
-### Manual Testing with MCP Inspector
-
-You can also test manually using the MCP inspector:
-
-```bash
-export YNAB_API_TOKEN="your_token"
-uv run mcp dev src/ynab_mcp/server.py
-```
 
 ## Available Resources
 
